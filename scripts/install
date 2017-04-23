@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# Exit on command errors and treat unset variables as an error
+set -eu
+
+source _common	# Loads the generic functions usually used in the script
+source /usr/share/yunohost/helpers # Source app helpers
+
+ynh_clean_setup () {
+	# Clean installation residues that are not supported by the remove script.
+	# Clean hosts
+	echo ""
+}
+ynh_abort_if_errors	# Active trap to stop the script if an error is detected.
+
+domain=$YNH_APP_ARG_DOMAIN
+path=$YNH_APP_ARG_PATH
+token_telegram=$YNH_APP_ARG_TOKEN_TELEGRAM
+user_github=$YNH_APP_ARG_USER_GITHUB
+token_github=$YNH_APP_ARG_TOKEN_GITHUB
+
+app=$YNH_APP_INSTANCE_NAME
+
+CHECK_VAR "$app" "app name not set"
+
+# Check and fix path syntax.
+path=$(ynh_normalize_url_path $path)
+CHECK_DOMAINPATH
+CHECK_FINALPATH
+
+ynh_app_setting_set $app domain $domain
+ynh_app_setting_set $app path $path
+ynh_app_setting_set $app token_telegram $token_telegram
+ynh_app_setting_set $app user_github $user_github
+ynh_app_setting_set $app token_github $token_github
+
+# Create system user dedicace for this app
+ynh_system_user_create $app
+
+# Creates the destination directory and stores its location.
+sudo mkdir "$final_path"
+ynh_app_setting_set $app final_path $final_path
+
+ynh_package_install python3-pip
+
+# Install de library Python
+sudo pip3 install python-telegram-bot
+sudo pip3 install certifi
+sudo pip3 install urllib3[secure]
+sudo pip3 install PySocks
+sudo pip3 install emoji
+
+sudo cp ../conf/config.py $final_path
+sudo cp ../conf/chatbot.py $final_path
+sudo sed -i "s@__TOKEN_TELEGRAM__@${token_telegram}@g" "${final_path}/config.py"
+sudo sed -i "s@__USER_GITHUB__@${user_github}@g" "${final_path}/config.py"
+sudo sed -i "s@__TOKEN_GITHUB__@${token_github}@g" "${final_path}/config.py"
+
+# Set permissions spip directory
+sudo chown -R $app: $final_path
+
+# Install systemd script
+sudo cp ../conf/telegram.chatbot.service /etc/systemd/system/$app.service
+sudo chown root: /etc/systemd/system/$app.service
+sudo sed -i "s@__FINALPATH__@$final_path/@g" /etc/systemd/system/$app.service
+sudo sed -i "s@__APP__@$app@g" /etc/systemd/system/$app.service
+
+# Create log directory
+sudo mkdir /var/log/$app/
+
+# Start service auto
+sudo systemctl daemon-reload
+sudo systemctl enable $app.service
+sudo systemctl start $app.service
+
+sudo yunohost service add $app -l /var/log/$app/$app.log
+
+sudo cp -a ../conf/dist $final_path
+
+sudo chown $app: /var/log/$app/
+
+# Modify Nginx configuration file and copy it to Nginx conf directory
+ynh_nginx_config
+
+# Add logrotate
+ynh_use_logrotate
+
+# Reload Nginx
+sudo service nginx reload
+
+# Regenerate SSOwat conf
+sudo yunohost app setting $app skipped_uris -v "/"
+sudo yunohost app ssowatconf

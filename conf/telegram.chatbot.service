@@ -1,0 +1,15 @@
+[Unit]
+Description=Telegram chatbot as a service
+After=multi-user.target
+
+[Service]
+Type=simple
+User=__APP__
+Group=__APP__
+ExecStart=/usr/bin/python3 __FINALPATH__chatbot.py
+TimeoutSec=15
+Restart=always
+StandardOutput=/var/log/__APP__/__APP__.log
+
+[Install]
+WantedBy=multi-user.target

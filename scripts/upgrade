@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Exit on command errors and treat unset variables as an error
+set -eu
+
+# Loads the generic functions usually used in the script
+source _common
+# Source YunoHost helpers
+source /usr/share/yunohost/helpers
+
+# See comments in install script
+app=$YNH_APP_INSTANCE_NAME
+
+# Retrieve app settings
+domain=$(ynh_app_setting_get "$app" domain)
+path=$(ynh_app_setting_get "$app" path)
+
+BACKUP_BEFORE_UPGRADE	# Backup the current version of the app
+ynh_clean_setup () {
+	BACKUP_FAIL_UPGRADE	# restore it if the upgrade fails
+}
+ynh_abort_if_errors	# Active trap pour arrêter le script si une erreur est détectée.
+
+#=================================================
+# CHECK THE PATH
+#=================================================
+
+path=$(ynh_normalize_url_path $path)	# Vérifie et corrige la syntaxe du path.
+
+final_path="/opt/${app}"
+
+# Set permissions spip directory
+sudo chown -R $app: $final_path
+
+# Reload Nginx
+sudo systemctl reload nginx
+sudo yunohost app setting $app skipped_uris -v "/"
+sudo yunohost app ssowatconf

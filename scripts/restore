@@ -1,0 +1,72 @@
+#!/bin/bash
+# This restore script is adapted to Yunohost >=2.5
+
+# Exit on command errors and treat unset variables as an error
+set -eu
+
+# Loads the generic functions usually used in the script
+source _common
+# Source app helpers
+source /usr/share/yunohost/helpers
+
+# The parameter $app is the id of the app instance ex: ynhexample__2
+app=$YNH_APP_INSTANCE_NAME
+
+# Get old parameter of the app
+domain=$(ynh_app_setting_get "$app" domain)
+path=$(ynh_app_setting_get "$app" path)
+
+# Check domain/path availability
+sudo yunohost app checkurl "${domain}${path}" -a "${app}" \
+    || ynh_die "Path not available: ${domain}${path}"
+
+# Check $final_path
+final_path="/opt/${app}"
+if [ -d $final_path ]; then
+	ynh_die "There is already a directory: $final_path"
+fi
+
+# Check configuration files nginx
+nginx_conf="/etc/nginx/conf.d/${domain}.d/${app}.conf"
+if [ -f $nginx_conf ]; then
+	ynh_die "The NGINX configuration already exists at '${nginx_conf}'. 
+	You should safely delete it before restoring this app."
+fi
+
+# Restore services
+chatbot_systemd="/etc/systemd/system/${app}.service"
+if [ -f "${chatbot_systemd}" ]; then
+	ynh_die "The CHATBOT configuration already exists at '${chatbot_systemd}'. 
+	You should safely delete it before restoring this app."
+fi
+
+# Create system user dedicace for this app
+ynh_system_user_create $app
+
+ # Restore sources & data
+sudo cp -a ./sources "${final_path}"
+
+# Set permissions
+sudo chown -R $app: "${final_path}"
+
+sudo cp ../conf/$app.service /etc/systemd/system/$app.service
+sudo chown root: /etc/systemd/system/$app.service
+
+sudo systemctl daemon-reload
+sudo systemctl enable /etc/systemd/system/$app.service
+sudo systemctl start $app.service
+# debug
+sudo systemctl status $app.service
+
+# Add service YunoHost
+sudo yunohost service add $app
+
+# Add logrotate
+ynh_use_logrotate
+
+# Reload nginx
+sudo systemctl reload nginx
+
+# Reload SSOwat
+sudo yunohost app setting $app skipped_uris -v "/"
+sudo yunohost app ssowatconf

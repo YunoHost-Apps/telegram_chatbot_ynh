@@ -1,0 +1,70 @@
+{
+    "name": "Telegram chabot",
+    "id": "telegram_chatbot",
+    "packaging_format": 1,
+    "requirements": {
+        "yunohost": ">> 2.5.0"
+    },
+    "description": {
+        "en": "Telegram chatbot - mini chatbot for Telegram",
+        "fr": "Telegram chatbot - petit chatbot pour Telegram"
+    },
+    "version": "0.0.3",
+    "license": "GNU v3.0",
+    "maintainer": {
+        "name": "cyp",
+        "email": "cyp@rouquin.me",
+        "url": "http://www.rouquin.me"
+    },
+    "multi_instance": false,
+    "url": "https://github.com/magikcypress",
+    "services": [
+        "nginx"
+    ],
+    "arguments": {
+        "install" : [
+            {
+                "name": "domain",
+                "type": "domain",
+                "ask": {
+                    "en": "Choose a domain for Telegram chatbot",
+                    "fr": "Choisissez un domaine pour ce chatbot Telegram"
+                },
+                "example": "domain.org"
+            },
+            {
+                "name": "path",
+                "type": "path",
+                "ask": {
+                    "en": "Choose a path for Telegram chatbot",
+                    "fr": "Choisissez un chemin pour ce chatbot Telegram"
+                },
+                "example": "/chatbottelegram",
+                "default": "/chatbottelegram"
+            },
+            {
+                "name": "token_telegram",
+                "type": "id",
+                "ask": {
+                    "en": "Token Telegram",
+                    "fr": "Token Telegram"
+                }
+            },
+            {
+                "name": "user_github",
+                "ask": {
+                    "en": "Username Github",
+                    "fr": "Nom d'utilisateur Github"
+                }
+            },
+            {
+                "name": "token_github",
+                "type": "id",
+                "ask": {
+                    "en": "Token API Github",
+                    "fr": "Token de l'API Github"
+                }
+            }
+        ]
+    }
+}
