@@ -43,6 +43,6 @@ ynh_remove_logrotate
 
 # Reload Nginx and regenerate SSOwat conf
 sudo service nginx reload
-sudo yunohost app ssowatconf
+
 
 echo -e "\e[0m"	# Restore normal color
