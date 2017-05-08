@@ -34,5 +34,3 @@ sudo chown -R $app: $final_path
 
 # Reload Nginx
 sudo systemctl reload nginx
-sudo yunohost app setting $app skipped_uris -v "/"
-sudo yunohost app ssowatconf
