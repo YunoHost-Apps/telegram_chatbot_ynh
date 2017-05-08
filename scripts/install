@@ -87,7 +87,3 @@ ynh_use_logrotate
 
 # Reload Nginx
 sudo service nginx reload
-
-# Regenerate SSOwat conf
-sudo yunohost app setting $app skipped_uris -v "/"
-sudo yunohost app ssowatconf
